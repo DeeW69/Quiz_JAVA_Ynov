@@ -1,4 +1,5 @@
-import javafx.*;
+package com.example.quiz_java;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
