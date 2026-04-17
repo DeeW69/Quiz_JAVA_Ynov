@@ -3,6 +3,7 @@ package com.example.quiz_java;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,6 +11,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -66,11 +69,13 @@ public class dialogue {
     private ImageView portrait;
     private Label nomOrateur;
     private Label texteDialogue;
+    private Label indiceEspace;
     private Button boutonContinuer;
 
     private Timeline chronologieTexte;
     private PauseTransition pauseAuto;
     private int indexEtape;
+    private boolean attenteEspace;
 
     public dialogue() {
         this(
@@ -88,6 +93,7 @@ public class dialogue {
         this.fenetre = fenetre;
         fenetre.setTitle("Briefing");
         fenetre.setScene(createScene());
+        fenetre.setOnShown(event -> Platform.runLater(racine::requestFocus));
     }
 
     public Scene createScene() {
@@ -103,6 +109,7 @@ public class dialogue {
         racine = new StackPane();
         racine.setStyle(BACKGROUND_STYLE);
         racine.setPadding(new Insets(30));
+        racine.setFocusTraversable(true);
 
         nomOrateur = new Label();
         nomOrateur.setFont(Font.font("Georgia", FontWeight.BOLD, 22));
@@ -152,6 +159,13 @@ public class dialogue {
         ligneDialogue.setId("conversation-row");
         ligneDialogue.setAlignment(Pos.CENTER);
 
+        indiceEspace = new Label("Appuyez sur ESPACE pour faire repondre le client.");
+        indiceEspace.setId("space-hint");
+        indiceEspace.setFont(Font.font("Georgia", FontWeight.BOLD, 18));
+        indiceEspace.setStyle("-fx-text-fill: #f1d0a3;");
+        indiceEspace.setVisible(false);
+        indiceEspace.setManaged(false);
+
         boutonContinuer = new Button("S'il te plait, chef !");
         boutonContinuer.setId("continue-button");
         boutonContinuer.setFont(Font.font("Georgia", FontWeight.BOLD, 20));
@@ -163,26 +177,30 @@ public class dialogue {
         );
         boutonContinuer.setVisible(false);
         boutonContinuer.setManaged(false);
+        boutonContinuer.setFocusTraversable(false);
         boutonContinuer.setOnAction(event -> avancer());
 
-        VBox contenu = new VBox(26, ligneDialogue, boutonContinuer);
+        VBox contenu = new VBox(26, ligneDialogue, indiceEspace, boutonContinuer);
         contenu.setAlignment(Pos.CENTER);
         contenu.setFillWidth(true);
         contenu.setMaxWidth(1050);
 
         racine.getChildren().setAll(contenu);
         scene = new Scene(racine, 1120, 760);
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, this::gererToucheDialogue);
     }
 
     private void afficherEtape(int nouvelIndex) {
         stopperAnimations();
 
         indexEtape = nouvelIndex;
+        attenteEspace = false;
         DialogueStep etape = etapes.get(indexEtape);
 
         nomOrateur.setText(etape.orateur().libelle);
         portrait.setImage(chargerImage(etape.image()));
         texteDialogue.setText("");
+        masquerIndiceEspace();
         masquerBouton();
 
         if (etape.orateur() == Speaker.CHEF) {
@@ -206,7 +224,7 @@ public class dialogue {
         }
 
         pauseAuto = new PauseTransition(delaiAuto);
-        pauseAuto.setOnFinished(event -> afficherEtape(indexEtape + 1));
+        pauseAuto.setOnFinished(event -> attendreEspacePourClient());
         pauseAuto.play();
     }
 
@@ -250,6 +268,9 @@ public class dialogue {
 
     private void afficherEcranFinal() {
         stopperAnimations();
+        attenteEspace = false;
+        masquerIndiceEspace();
+        masquerBouton();
 
         ImageView imageFinale = new ImageView(chargerImage("chef_2.png"));
         imageFinale.setPreserveRatio(false);
@@ -301,6 +322,23 @@ public class dialogue {
         racine.getChildren().setAll(contenuFinal);
     }
 
+    private void attendreEspacePourClient() {
+        attenteEspace = true;
+        afficherIndiceEspace();
+        Platform.runLater(racine::requestFocus);
+    }
+
+    private void gererToucheDialogue(KeyEvent evenement) {
+        if (!attenteEspace || evenement.getCode() != KeyCode.SPACE) {
+            return;
+        }
+
+        attenteEspace = false;
+        masquerIndiceEspace();
+        afficherEtape(indexEtape + 1);
+        evenement.consume();
+    }
+
     private void afficherPlaceholderJeu() {
         Label titre = new Label("La scene de jeu n'est pas encore creee.");
         titre.setId("placeholder-label");
@@ -325,11 +363,22 @@ public class dialogue {
     private void afficherBouton() {
         boutonContinuer.setVisible(true);
         boutonContinuer.setManaged(true);
+        Platform.runLater(racine::requestFocus);
+    }
+
+    private void afficherIndiceEspace() {
+        indiceEspace.setVisible(true);
+        indiceEspace.setManaged(true);
     }
 
     private void masquerBouton() {
         boutonContinuer.setVisible(false);
         boutonContinuer.setManaged(false);
+    }
+
+    private void masquerIndiceEspace() {
+        indiceEspace.setVisible(false);
+        indiceEspace.setManaged(false);
     }
 
     private void stopperAnimations() {
@@ -340,6 +389,8 @@ public class dialogue {
         if (pauseAuto != null) {
             pauseAuto.stop();
         }
+
+        attenteEspace = false;
     }
 
     private Image chargerImage(String nomRessource) {
