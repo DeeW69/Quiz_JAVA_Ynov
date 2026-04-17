@@ -13,7 +13,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -30,29 +29,29 @@ import java.util.Objects;
 
 public class dialogue {
 
-    private static final String BACKGROUND_STYLE =
+    private static final String STYLE_ARRIERE_PLAN =
             "-fx-background-color: linear-gradient(to bottom, #23150d, #5c250a);";
 
-    private final List<DialogueStep> etapes = List.of(
-            new DialogueStep(Speaker.CHEF,
+    private final List<EtapeDialogue> etapes = List.of(
+            new EtapeDialogue(Orateur.CHEF,
                     "Bienvenue au Doner Imperial. Ici, le pain croustille avec une ambition professionnelle.",
                     "chef_doner.png"),
-            new DialogueStep(Speaker.CLIENT,
+            new EtapeDialogue(Orateur.CLIENT,
                     "Bonsoir chef... je voudrais juste un doner simple. Enfin, simple si cela existe encore ici.",
                     "client_doner.png"),
-            new DialogueStep(Speaker.CHEF,
+            new EtapeDialogue(Orateur.CHEF,
                     "Simple ? Je peux faire simple, mais ce serait insultant pour la sauce blanche.",
                     "chef_doner.png"),
-            new DialogueStep(Speaker.CLIENT,
-                    "Dans ce cas, mettez-moi un kebab sérieux, avec salade, tomates, oignons et un peu de dignite.",
+            new EtapeDialogue(Orateur.CLIENT,
+                    "Dans ce cas, mettez-moi un kebab serieux, avec salade, tomates, oignons et un peu de dignite.",
                     "client_doner.png"),
-            new DialogueStep(Speaker.CHEF,
+            new EtapeDialogue(Orateur.CHEF,
                     "Je vais te servir un monument roulant de viande, de salade et d'espoir croustillant.",
                     "chef_doner.png"),
-            new DialogueStep(Speaker.CLIENT,
+            new EtapeDialogue(Orateur.CLIENT,
                     "Je ne comprends pas tout, mais je sens que ce doner va me marquer spirituellement.",
                     "client_doner.png"),
-            new DialogueStep(Speaker.CHEF,
+            new EtapeDialogue(Orateur.CHEF,
                     "Parfait. Recois maintenant le doner officiel du quartier. Mange avec honneur.",
                     "chef_doner.png")
     );
@@ -89,14 +88,14 @@ public class dialogue {
         this.delaiAuto = delaiAuto;
     }
 
-    public void configure(Stage fenetre) {
+    public void configurer(Stage fenetre) {
         this.fenetre = fenetre;
         fenetre.setTitle("Briefing");
-        fenetre.setScene(createScene());
+        fenetre.setScene(creerScene());
         fenetre.setOnShown(event -> Platform.runLater(racine::requestFocus));
     }
 
-    public Scene createScene() {
+    public Scene creerScene() {
         if (scene == null) {
             construireScene();
             afficherEtape(0);
@@ -107,7 +106,7 @@ public class dialogue {
 
     private void construireScene() {
         racine = new StackPane();
-        racine.setStyle(BACKGROUND_STYLE);
+        racine.setStyle(STYLE_ARRIERE_PLAN);
         racine.setPadding(new Insets(30));
         racine.setFocusTraversable(true);
 
@@ -195,7 +194,7 @@ public class dialogue {
 
         indexEtape = nouvelIndex;
         attenteEspace = false;
-        DialogueStep etape = etapes.get(indexEtape);
+        EtapeDialogue etape = etapes.get(indexEtape);
 
         nomOrateur.setText(etape.orateur().libelle);
         portrait.setImage(chargerImage(etape.image()));
@@ -203,7 +202,7 @@ public class dialogue {
         masquerIndiceEspace();
         masquerBouton();
 
-        if (etape.orateur() == Speaker.CHEF) {
+        if (etape.orateur() == Orateur.CHEF) {
             ligneDialogue.getChildren().setAll(bulleDialogue, cadrePortrait);
         } else {
             ligneDialogue.getChildren().setAll(cadrePortrait, bulleDialogue);
@@ -212,13 +211,13 @@ public class dialogue {
         lancerMachineAEcrire(etape.texte(), () -> terminerEtape(etape));
     }
 
-    private void terminerEtape(DialogueStep etape) {
+    private void terminerEtape(EtapeDialogue etape) {
         if (indexEtape == etapes.size() - 1) {
             lancerVersFin();
             return;
         }
 
-        if (etape.orateur() == Speaker.CLIENT) {
+        if (etape.orateur() == Orateur.CLIENT) {
             afficherBouton();
             return;
         }
@@ -277,9 +276,9 @@ public class dialogue {
         imageFinale.fitWidthProperty().bind(scene.widthProperty().subtract(60));
         imageFinale.fitHeightProperty().bind(scene.heightProperty().subtract(150));
 
-        StackPane imageContainer = new StackPane(imageFinale);
-        imageContainer.setPadding(new Insets(10));
-        imageContainer.setStyle(
+        StackPane conteneurImage = new StackPane(imageFinale);
+        conteneurImage.setPadding(new Insets(10));
+        conteneurImage.setStyle(
                 "-fx-background-color: rgba(18, 13, 9, 0.55);" +
                         "-fx-border-color: #f1bc6b;" +
                         "-fx-border-width: 2;" +
@@ -296,7 +295,7 @@ public class dialogue {
                         "-fx-background-radius: 14;" +
                         "-fx-padding: 12 22;"
         );
-        boutonJeu.setOnAction(event -> afficherPlaceholderJeu());
+        boutonJeu.setOnAction(event -> new QuizScene().afficher(fenetre));
 
         Button boutonQuitter = new Button("Quitter");
         boutonQuitter.setId("quit-button");
@@ -315,7 +314,7 @@ public class dialogue {
         HBox actions = new HBox(18, boutonJeu, boutonQuitter);
         actions.setAlignment(Pos.CENTER);
 
-        VBox contenuFinal = new VBox(24, imageContainer, actions);
+        VBox contenuFinal = new VBox(24, conteneurImage, actions);
         contenuFinal.setAlignment(Pos.CENTER);
         contenuFinal.setMaxWidth(1050);
 
@@ -337,27 +336,6 @@ public class dialogue {
         masquerIndiceEspace();
         afficherEtape(indexEtape + 1);
         evenement.consume();
-    }
-
-    private void afficherPlaceholderJeu() {
-        Label titre = new Label("La scene de jeu n'est pas encore creee.");
-        titre.setId("placeholder-label");
-        titre.setFont(Font.font("Georgia", FontWeight.BOLD, 28));
-        titre.setStyle("-fx-text-fill: #fff4dd;");
-
-        Label sousTitre = new Label("Placeholder temporaire: branchez ici l'ecran suivant du quiz.");
-        sousTitre.setWrapText(true);
-        sousTitre.setTextAlignment(TextAlignment.CENTER);
-        sousTitre.setFont(Font.font("Georgia", 22));
-        sousTitre.setStyle("-fx-text-fill: #f1d0a3;");
-
-        BorderPane placeholder = new BorderPane();
-        placeholder.setStyle(BACKGROUND_STYLE);
-        placeholder.setPadding(new Insets(30));
-        placeholder.setCenter(new VBox(18, titre, sousTitre));
-        BorderPane.setAlignment(placeholder.getCenter(), Pos.CENTER);
-
-        fenetre.setScene(new Scene(placeholder, 1120, 760));
     }
 
     private void afficherBouton() {
@@ -395,8 +373,8 @@ public class dialogue {
 
     private Image chargerImage(String nomRessource) {
         try (InputStream flux = dialogue.class.getResourceAsStream(nomRessource)) {
-            InputStream imageFlux = Objects.requireNonNull(flux, "Ressource introuvable: " + nomRessource);
-            return new Image(imageFlux);
+            InputStream fluxImage = Objects.requireNonNull(flux, "Ressource introuvable: " + nomRessource);
+            return new Image(fluxImage);
         } catch (Exception exception) {
             throw new IllegalStateException("Impossible de charger l'image " + nomRessource, exception);
         }
@@ -411,16 +389,16 @@ public class dialogue {
         return Long.parseLong(valeur);
     }
 
-    private record DialogueStep(Speaker orateur, String texte, String image) {
+    private record EtapeDialogue(Orateur orateur, String texte, String image) {
     }
 
-    private enum Speaker {
+    private enum Orateur {
         CHEF("Chef kebabier"),
         CLIENT("Client");
 
         private final String libelle;
 
-        Speaker(String libelle) {
+        Orateur(String libelle) {
             this.libelle = libelle;
         }
     }

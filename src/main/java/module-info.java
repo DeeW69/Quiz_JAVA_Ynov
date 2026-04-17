@@ -1,4 +1,5 @@
 module com.example.quiz_java {
+    requires com.fasterxml.jackson.databind;
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
@@ -11,6 +12,6 @@ module com.example.quiz_java {
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
 
-    opens com.example.quiz_java to javafx.fxml;
+    opens com.example.quiz_java to javafx.fxml, com.fasterxml.jackson.databind;
     exports com.example.quiz_java;
 }
