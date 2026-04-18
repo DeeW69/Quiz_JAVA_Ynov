@@ -74,7 +74,7 @@ public class dialogue {
     private Timeline chronologieTexte;
     private PauseTransition pauseAuto;
     private int indexEtape;
-    private boolean attenteEspace;
+    private boolean attenteAvance;
 
     public dialogue() {
         this(
@@ -158,14 +158,14 @@ public class dialogue {
         ligneDialogue.setId("conversation-row");
         ligneDialogue.setAlignment(Pos.CENTER);
 
-        indiceEspace = new Label("Appuyez sur ESPACE pour faire repondre le client.");
+        indiceEspace = new Label("Appuyez sur ESPACE ou cliquez sur Continuer.");
         indiceEspace.setId("space-hint");
         indiceEspace.setFont(Font.font("Georgia", FontWeight.BOLD, 18));
         indiceEspace.setStyle("-fx-text-fill: #f1d0a3;");
         indiceEspace.setVisible(false);
         indiceEspace.setManaged(false);
 
-        boutonContinuer = new Button("S'il te plait, chef !");
+        boutonContinuer = new Button("Continuer");
         boutonContinuer.setId("continue-button");
         boutonContinuer.setFont(Font.font("Georgia", FontWeight.BOLD, 20));
         boutonContinuer.setStyle(
@@ -177,7 +177,7 @@ public class dialogue {
         boutonContinuer.setVisible(false);
         boutonContinuer.setManaged(false);
         boutonContinuer.setFocusTraversable(false);
-        boutonContinuer.setOnAction(event -> avancer());
+        boutonContinuer.setOnAction(event -> tenterAvancer());
 
         VBox contenu = new VBox(26, ligneDialogue, indiceEspace, boutonContinuer);
         contenu.setAlignment(Pos.CENTER);
@@ -193,7 +193,7 @@ public class dialogue {
         stopperAnimations();
 
         indexEtape = nouvelIndex;
-        attenteEspace = false;
+        attenteAvance = false;
         EtapeDialogue etape = etapes.get(indexEtape);
 
         nomOrateur.setText(etape.orateur().libelle);
@@ -218,12 +218,12 @@ public class dialogue {
         }
 
         if (etape.orateur() == Orateur.CLIENT) {
-            afficherBouton();
+            activerControlesAvance();
             return;
         }
 
         pauseAuto = new PauseTransition(delaiAuto);
-        pauseAuto.setOnFinished(event -> attendreEspacePourClient());
+        pauseAuto.setOnFinished(event -> activerControlesAvance());
         pauseAuto.play();
     }
 
@@ -267,7 +267,7 @@ public class dialogue {
 
     private void afficherEcranFinal() {
         stopperAnimations();
-        attenteEspace = false;
+        attenteAvance = false;
         masquerIndiceEspace();
         masquerBouton();
 
@@ -321,27 +321,36 @@ public class dialogue {
         racine.getChildren().setAll(contenuFinal);
     }
 
-    private void attendreEspacePourClient() {
-        attenteEspace = true;
-        afficherIndiceEspace();
-        Platform.runLater(racine::requestFocus);
-    }
-
     private void gererToucheDialogue(KeyEvent evenement) {
-        if (!attenteEspace || evenement.getCode() != KeyCode.SPACE) {
+        if (!attenteAvance || evenement.getCode() != KeyCode.SPACE) {
             return;
         }
 
-        attenteEspace = false;
-        masquerIndiceEspace();
-        afficherEtape(indexEtape + 1);
+        tenterAvancer();
         evenement.consume();
+    }
+
+    private void activerControlesAvance() {
+        attenteAvance = true;
+        afficherIndiceEspace();
+        afficherBouton();
+        Platform.runLater(racine::requestFocus);
+    }
+
+    private void tenterAvancer() {
+        if (!attenteAvance) {
+            return;
+        }
+
+        attenteAvance = false;
+        masquerIndiceEspace();
+        masquerBouton();
+        avancer();
     }
 
     private void afficherBouton() {
         boutonContinuer.setVisible(true);
         boutonContinuer.setManaged(true);
-        Platform.runLater(racine::requestFocus);
     }
 
     private void afficherIndiceEspace() {
@@ -368,7 +377,7 @@ public class dialogue {
             pauseAuto.stop();
         }
 
-        attenteEspace = false;
+        attenteAvance = false;
     }
 
     private Image chargerImage(String nomRessource) {
