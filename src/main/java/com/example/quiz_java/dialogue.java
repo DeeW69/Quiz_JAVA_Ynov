@@ -272,9 +272,10 @@ public class dialogue {
         masquerBouton();
 
         ImageView imageFinale = new ImageView(chargerImage("chef_2.png"));
-        imageFinale.setPreserveRatio(false);
-        imageFinale.fitWidthProperty().bind(scene.widthProperty().subtract(60));
-        imageFinale.fitHeightProperty().bind(scene.heightProperty().subtract(150));
+        imageFinale.setPreserveRatio(true);
+        imageFinale.setSmooth(true);
+        imageFinale.fitWidthProperty().bind(scene.widthProperty().subtract(100));
+        imageFinale.fitHeightProperty().bind(scene.heightProperty().multiply(0.62));
 
         StackPane conteneurImage = new StackPane(imageFinale);
         conteneurImage.setPadding(new Insets(10));
