@@ -6,8 +6,8 @@ import javafx.stage.Stage;
 public class HelloApplication extends Application {
     @Override
     public void start(Stage stage) {
-        dialogue vueDialogue = new dialogue();
-        vueDialogue.configurer(stage);
+        SelectionScene vueSelection = new SelectionScene();
+        vueSelection.configurer(stage);
         stage.show();
     }
 }
